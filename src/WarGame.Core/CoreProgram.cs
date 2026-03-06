@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.Design;
 using System.Dynamic;
+using System.Net.Quic;
 using System.Net.Security;
 
 namespace WarGame.Core;
@@ -23,7 +24,6 @@ public class Card
 
         suite = suites[suitePick];
         rank = rankNum;
-        value = rankNum;
     }
 }
 public class Deck
@@ -124,9 +124,10 @@ public class PlayedCards
     {
         playedCards[player] = card;
     }
-    public (List<String>, int) GetHighest()
+    public (List<String>, List<Card>) GetHighest()
     {
         int highestNum = 0;
+        List<Card> winCards = new List<Card>();
         List<String> highPlayers = new List<String>();
 
         List<String> players = playedCards.Keys.ToList();
@@ -137,11 +138,15 @@ public class PlayedCards
         {
             if (cards[i].value > highestNum)
             {
-                highestNum = cards[i].value;
+                highestNum = cards[i].rank;
                 highPlayers = [players[i]];
+                winCards = [cards[i]];
             }
             else if (cards[i].value == highestNum)
+            {
                 highPlayers.Add(players[i]);
+                winCards.Add(cards[i]);
+            }
         }
         // Remove tied players/winner
         foreach (String player in highPlayers)
@@ -149,7 +154,7 @@ public class PlayedCards
             playedCards.Remove(player);
         }
 
-        return (highPlayers, highestNum);
+        return (highPlayers, winCards);
     }
 }
 public class Pot
@@ -198,8 +203,10 @@ public class Deal
 }
 public class Round
 {
+    private int roundNumber = 1;
     public void RoundLoop(Pot pot, PlayerHand playerHand)
     {
+        Console.WriteLine($"Round {roundNumber}");
         List<String> players = playerHand.GetPlayers();
 
         // Handle players without a card
@@ -221,23 +228,36 @@ public class Round
         }
 
         // Add cards to pot
-        (List<String>, int) tieChecker = playedCards.GetHighest();
+        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
         foreach (Card card in playedCards.GetCards())
         {
             pot.AddCard(card);
         }
 
+        // Should be moved outside round loop....
         // Tie handling
         if (tieChecker.Item1.Count() != 0)
         {
             Console.WriteLine("HIT A TIE. Waiting...");
+            for (int i = 1; i <= tieChecker.Item1.Count(); i++)
+            {
+                pot.AddCard(tieChecker.Item2[i]);
+            }
             Console.ReadLine();
         }
 
+        // Round winner
+        String winningPlayer = tieChecker.Item1[0];
+        Console.WriteLine($"{winningPlayer} has won the round!");
+        roundNumber += 1;
 
+        if (playerHand.GetHand(winningPlayer).GetCardCount() >= 52 || playerHand.GetPlayers().Count() <= 1)
+        {
+            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
+        }
+        if (roundNumber >= 10000)
+        {
+            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
+        }
     }
-}
-public class EndGameChecking
-{
-
 }
