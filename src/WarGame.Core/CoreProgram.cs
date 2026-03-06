@@ -88,6 +88,13 @@ public class Hand
 public class PlayerHand
 {
     private Dictionary<String, Hand> playerhands = new Dictionary<String, Hand>();
+    public PlayerHand(int players)
+    {
+        for (int i = 0; i < players; i++)
+        {
+            playerhands[$"Player {i + 1}"] = new Hand();
+        }
+    }
     public Hand GetHand(String player)
     {
         return playerhands[player];
@@ -204,7 +211,7 @@ public class Deal
 public class Round
 {
     private int roundNumber = 1;
-    public void RoundLoop(Pot pot, PlayerHand playerHand)
+    public bool RoundLoop(Pot pot, PlayerHand playerHand)
     {
         Console.WriteLine($"Round {roundNumber}");
         List<String> players = playerHand.GetPlayers();
@@ -254,10 +261,16 @@ public class Round
         if (playerHand.GetHand(winningPlayer).GetCardCount() >= 52 || playerHand.GetPlayers().Count() <= 1)
         {
             Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
+            return true;
         }
-        if (roundNumber >= 10000)
+        else if (roundNumber >= 10000)
         {
             Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }
