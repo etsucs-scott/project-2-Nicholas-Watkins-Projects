@@ -196,7 +196,7 @@ public class Deal
         List<String> players = playerHand.GetPlayers();
         while (deck.GetLength() > 0)
         {
-            if (playerChoice > 4)
+            if (playerChoice >= players.Count())
                 playerChoice = 0;
 
             String player = players[playerChoice];
@@ -204,7 +204,8 @@ public class Deal
             Card card = deck.Draw();
             Hand hand = playerHand.GetHand(player);
             hand.AddCard(card);
-            playerHand.UpdateHand(player, hand); 
+            playerHand.UpdateHand(player, hand);
+            playerChoice += 1;
         }
     }
 }
@@ -213,13 +214,13 @@ public class Round
     private int roundNumber = 1;
     public bool RoundLoop(Pot pot, PlayerHand playerHand)
     {
-        Console.WriteLine($"Round {roundNumber}");
+        Console.WriteLine($"\nRound {roundNumber}");
         List<String> players = playerHand.GetPlayers();
 
         // Handle players without a card
         foreach (String player in players) // Check if player doesnt has card and removes them from PlayerHand if they dont
         {
-            if (playerHand.GetHand(player).GetCardCount() < 0)
+            if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
                 playerHand.RemovePlayer(player);
                 Console.WriteLine($"{player} has lost!");
@@ -258,7 +259,7 @@ public class Round
         Console.WriteLine($"{winningPlayer} has won the round!");
         foreach (String player in playerHand.GetPlayers())
         {
-            Console.WriteLine($"{player} has {playerHand.GetHand(player).GetCardCount()}");
+            Console.WriteLine($"\t\t{player} has {playerHand.GetHand(player).GetCardCount()} cards");
         }
         roundNumber += 1;
 
