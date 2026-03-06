@@ -243,7 +243,7 @@ public class Round
 
         // Should be moved outside round loop....
         // Tie handling
-        if (tieChecker.Item1.Count() != 0)
+        if (tieChecker.Item1.Count() != 1)
         {
             Console.WriteLine("HIT A TIE. Waiting...");
             for (int i = 1; i <= tieChecker.Item1.Count(); i++)
@@ -256,6 +256,10 @@ public class Round
         // Round winner
         String winningPlayer = tieChecker.Item1[0];
         Console.WriteLine($"{winningPlayer} has won the round!");
+        foreach (String player in playerHand.GetPlayers())
+        {
+            Console.WriteLine($"{player} has {playerHand.GetHand(player).GetCardCount()}");
+        }
         roundNumber += 1;
 
         if (playerHand.GetHand(winningPlayer).GetCardCount() >= 52 || playerHand.GetPlayers().Count() <= 1)

@@ -17,7 +17,8 @@ namespace WarGame.Core
                 }
                 else
                 {
-                    Console.WriteLine("Try again bub");
+                    Console.WriteLine("Try again bub\nPress enter to continue");
+                    Console.ReadLine();
                 }
             }
             
