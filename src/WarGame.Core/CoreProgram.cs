@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Dynamic;
 using System.Net.Quic;
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace WarGame.Core;
 
@@ -227,8 +228,23 @@ public class Round
             if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
                 players.Remove(player);
+                playerHand.RemovePlayer(player);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{player} has lost!");
+                Console.ResetColor();
+            }
+        }
+        return players;
+    }
+    private List<String> CheckTiePlayers(List<String> players, List<Hand> hands)
+    {
+        for (int i = 0; i < hands.Count(); i++)
+        {
+            if (hands[i].GetCardCount() <= 0)
+            {
+                players.Remove(players[i]);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{players[i]} has lost!");
                 Console.ResetColor();
             }
         }
@@ -267,14 +283,24 @@ public class Round
         if (tieChecker.Item1.Count() != 1) // Handle tie, if not, continue
         {
             Console.WriteLine("\nTie!");
+            List<String> potRanks = new List<String>();
+
+            foreach (Card card in pot.GetPot())
+            {
+                potRanks.Add(card.rankPairs[card.rank]);
+            }
+
+            Console.WriteLine(string.Format("Pot includes: {0}", string.Join(", ", potRanks)));
             PlayedCards tieCards;
             List<Hand> tieHands = new List<Hand>();
 
-            foreach (String player in tieChecker.Item1)
+            foreach (String player in tieChecker.Item1) // Add hands of each player to tiehands list
             {
                 tieHands.Add(playerHand.GetHand(player));
             }
 
+            // Check for if the players can continue and if there was a tie
+            tieChecker.Item1 = CheckTiePlayers(tieChecker.Item1, tieHands); 
             tieCards = UpdatePlayedCard(tieChecker.Item1, tieHands);
 
             // Add cards to pot
@@ -315,7 +341,6 @@ public class Round
         else
             return false;
     }
-
     public void PlayRound(Pot pot, PlayerHand playerHand)
     {
 

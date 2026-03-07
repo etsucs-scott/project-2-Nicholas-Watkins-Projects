@@ -45,8 +45,6 @@ namespace WarGame.Core
 
                 gameRounds.PlayRound(pot, playerHands);
                 winCondition = gameRounds.WinConditionCheck(playerHands, roundNumber);
-                Console.WriteLine("Continue?: ");
-                Console.ReadLine();
                 roundNumber += 1;
             }
             Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
