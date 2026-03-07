@@ -407,4 +407,37 @@ public class Round
         }
         Console.WriteLine($"\tCard totals: {cardTotals}");
     }
+    public void DetermineWinner(PlayerHand playerHand)
+    {
+        List<String> players = playerHand.GetPlayers();
+        int highestNum = 0;
+        int pick = -1;
+
+        for (int i = 0; i < playerHand.GetPlayers().Count(); i++)
+        {
+            int playerCardCount = playerHand.GetHand(players[i]).GetCardCount();
+            if (playerCardCount >= 52)
+                pick = i;
+            if (playerCardCount > highestNum)
+                highestNum = playerCardCount;
+            else if (playerCardCount == highestNum)
+                pick = -1;
+        }
+        if (pick == -1)
+        {
+            Console.WriteLine();
+            Console.BackgroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.Write("The game has ended in a tie!");
+            Console.ResetColor();
+        }
+        else
+        {
+            Console.WriteLine();
+            Console.BackgroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.Write($"{players[pick]} has won the game!");
+            Console.ResetColor();
+        }
+    }
 }

@@ -34,7 +34,7 @@ namespace WarGame.Core
 
             bool winCondition = false;
             int roundNumber = 1;
-            while (!winCondition)
+            while (!winCondition) // Game loop
             {
                 Pot pot = new Pot();
                 Console.WriteLine("\n");
@@ -45,9 +45,13 @@ namespace WarGame.Core
 
                 gameRounds.PlayRound(pot, playerHands);
                 winCondition = gameRounds.WinConditionCheck(playerHands, roundNumber);
+
+                Console.WriteLine("Press enter to continue");
+                Console.ReadLine();
+
                 roundNumber += 1;
             }
-            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
+            gameRounds.DetermineWinner(playerHands);
         }
     }
 }
