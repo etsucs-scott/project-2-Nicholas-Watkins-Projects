@@ -227,17 +227,19 @@ public class Round
             if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
                 players.Remove(player);
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{player} has lost!");
+                Console.ResetColor();
             }
         }
         return players;
     }
-    private PlayedCards UpdatePlayedCard(List<String> players, PlayerHand playerHand)
+    private PlayedCards UpdatePlayedCard(List<String> players, List<Hand> hands)
     {
         PlayedCards playedCards = new PlayedCards();
         for (int i = 0; i < players.Count(); i++)
         {
-            Card card = playerHand.GetHand(players[i]).GetCard();
+            Card card = hands[i].GetCard();
             Console.Write($"{players[i]}: ");
             
             if (card.suite == "Hearts" || card.suite == "Diamonds")
@@ -262,9 +264,31 @@ public class Round
     }
     private void TieChecking((List<String>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
     {
-        if (tieChecker.Item1.Count() != 1)
+        if (tieChecker.Item1.Count() != 1) // Handle tie, if not, continue
         {
-            Console.WriteLine("HIT A TIE. Waiting...");
+            Console.WriteLine("\nTie!");
+            PlayedCards tieCards;
+            List<Hand> tieHands = new List<Hand>();
+
+            foreach (String player in tieChecker.Item1)
+            {
+                tieHands.Add(playerHand.GetHand(player));
+            }
+
+            tieCards = UpdatePlayedCard(tieChecker.Item1, tieHands);
+
+            // Add cards to pot
+            foreach (Card card in tieCards.GetCards())
+            {
+                pot.AddCard(card);
+            }
+
+            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest();
+            TieChecking(tieCheckTie, playerHand, pot);
+
+            tieChecker = tieCheckTie;
+            
+            /** 
             for (int i = 0; i < tieChecker.Item1.Count(); i++) // Temp function to return cards back to owners after tie
             {
                 Hand hand = playerHand.GetHand(tieChecker.Item1[i]);
@@ -275,7 +299,7 @@ public class Round
                 playerHand.UpdateHand(tieChecker.Item1[i], hand);
                 pot.RemoveCard(card);
             }
-            Console.ReadLine();
+            **/
         }
     }
     public bool WinConditionCheck(PlayerHand playerHand, int roundNumber)
@@ -301,7 +325,7 @@ public class Round
 
         // Player hands to played cards 
         PlayedCards playedCards;
-        playedCards = UpdatePlayedCard(players, playerHand);
+        playedCards = UpdatePlayedCard(players, playerHand.GetHands());
 
         // Add cards to pot
         foreach (Card card in playedCards.GetCards())
@@ -311,7 +335,8 @@ public class Round
 
         // Tie handling
         (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
-        TieChecking(tieChecker, playerHand, pot); 
+
+        TieChecking(tieChecker, playerHand, pot);
 
         // Round winner
         String winningPlayer = tieChecker.Item1[0]; // Get winning player
@@ -334,17 +359,20 @@ public class Round
         }
         playerHand.UpdateHand(winningPlayer, winHand);
 
+        int cardTotals = 0; // DEBUG
         // Print out player cards and wins
         foreach (String player in playerHand.GetPlayers())
         {
             int cardCount = playerHand.GetHand(player).GetCardCount();
+            cardTotals += cardCount; // DEBUG
+
             Console.Write($"\t\t{player} has {cardCount} cards with ");
             if (player == winningPlayer)
             {
                 Console.BackgroundColor = ConsoleColor.Yellow;
                 Console.ForegroundColor = ConsoleColor.Black;
                 Console.Write($"{playerHand.GetPlayerWins(player)} wins!");
-                Console.ResetColor(); 
+                Console.ResetColor();
                 Console.WriteLine();
             }
             else
@@ -352,5 +380,6 @@ public class Round
                 Console.Write($"{playerHand.GetPlayerWins(player)} wins!\n");
             }
         }
+        Console.WriteLine($"\tCard totals: {cardTotals}");
     }
 }
