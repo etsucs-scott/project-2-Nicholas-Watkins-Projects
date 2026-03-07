@@ -227,10 +227,10 @@ public class Round
         {
             if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
-                players.Remove(player);
-                playerHand.RemovePlayer(player);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{player} has lost!");
+                players.Remove(player);
+                playerHand.RemovePlayer(player);
                 Console.ResetColor();
             }
         }
@@ -242,9 +242,9 @@ public class Round
         {
             if (hands[i].GetCardCount() <= 0)
             {
-                players.Remove(players[i]);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"{players[i]} has lost!");
+                players.Remove(players[i]);
                 Console.ResetColor();
             }
         }
