@@ -11,14 +11,14 @@ public class Card
 {
     public string suite { get; private set; }
     public int rank { get; private set; }
-    public int value { get; private set; }
     public Dictionary<int, string> rankPairs { get; private set; } = new Dictionary<int, string>();
     public Card(int suitePick, int rankNum)
     {
         string[] suites = { "Clubs", "Diamonds", "Spades", "Hearts" }; // 0, 1, 2, 3
+        // Converts rankNum to store its string counterpart, including J-A
         if (rankNum >= 11)
         {
-            string[] uniqueRank = { "J", "Q", "K", "A"};
+            string[] uniqueRank = { "J", "Q", "K", "A" };
             rankPairs[rankNum] = uniqueRank[rankNum - 11];
         }
         else
@@ -33,7 +33,7 @@ public class Deck
     private Stack<Card> cards = new Stack<Card>();
     public Deck()
     {
-        // 52 card deck 
+        // 52 card deck init
         for (int i = 0; i < 4; i++)
         {
             for (int j = 0; j < 13; j++)
@@ -46,7 +46,7 @@ public class Deck
     {
         return cards.Pop();
     }
-    public void Shuffle()
+    public void Shuffle() // Shuffle cards by randomly mixing a list then converting back to a stack
     {
         List<Card> list = cards.ToList();
         list = list.OrderBy(x => Random.Shared.Next()).ToList();
@@ -55,20 +55,6 @@ public class Deck
     public int GetLength()
     {
         return cards.Count;
-    }
-    public void ShowDeck() // Shows deck using different colors, mainly for debug and testing
-    {
-        foreach (Card card in cards)
-        {
-            if (card.suite == "Clubs" || card.suite == "Spades")
-                Console.WriteLine($"Card \"{ card.rankPairs[card.rank]}\" of {card.suite}");
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine($"Card \"{ card.rankPairs[card.rank]}\" of {card.suite}");
-                Console.ResetColor();
-            }
-        }
     }
 }
 public class Hand
@@ -89,9 +75,9 @@ public class Hand
 }
 public class PlayerHand
 {
-    private Dictionary<String, Hand> playerhands = new Dictionary<String, Hand>();
-    private Dictionary<String, int> playerWins = new Dictionary<String, int>();
-    public PlayerHand(int players)
+    private Dictionary<string, Hand> playerhands = new Dictionary<string, Hand>();
+    private Dictionary<string, int> playerWins = new Dictionary<string, int>();
+    public PlayerHand(int players) // init players
     {
         for (int i = 0; i < players; i++)
         {
@@ -99,15 +85,15 @@ public class PlayerHand
             playerWins[$"Player {i + 1}"] = 0;
         }
     }
-    public Hand GetHand(String player)
+    public Hand GetHand(string player)
     {
         return playerhands[player];
     }
-    public void UpdateHand(String player, Hand hand)
+    public void UpdateHand(string player, Hand hand)
     {
         playerhands[player] = hand;
     }
-    public List<String> GetPlayers()
+    public List<string> GetPlayers()
     {
         return playerhands.Keys.ToList();
     }
@@ -115,27 +101,27 @@ public class PlayerHand
     {
         return playerhands.Values.ToList();
     }
-    public void RemovePlayer(String player)
+    public void RemovePlayer(string player)
     {
         playerhands.Remove(player);
     }
-    public void AddPlayer(String player, Hand hand)
+    public void AddPlayer(string player, Hand hand)
     {
         playerhands[player] = hand;
     }
-    public void AddWin(String player)
+    public void AddWin(string player)
     {
         playerWins[player] += 1;
     }
-    public int GetPlayerWins(String player)
+    public int GetPlayerWins(string player)
     {
         return playerWins[player];
     }
 }
 public class PlayedCards
 {
-    private Dictionary<String, Card> playedCards = new Dictionary<String, Card>();
-    public Card GetCard(String player)
+    private Dictionary<string, Card> playedCards = new Dictionary<string, Card>();
+    public Card GetCard(string player)
     {
         return playedCards[player];
     }
@@ -143,11 +129,11 @@ public class PlayedCards
     {
         return playedCards.Values.ToList();
     }
-    public void UpdateCard(String player, Card card)
+    public void UpdateCard(string player, Card card)
     {
         playedCards[player] = card;
     }
-    public (List<String>, List<Card>) GetHighest()
+    public (List<string>, List<Card>) GetHighest()
     {
         int highestNum = 0;
         List<Card> winCards = new List<Card>();
@@ -159,12 +145,12 @@ public class PlayedCards
         // Find the highest ranked players and track them for tie handling
         for (int i = 0; i < playedCards.Count(); i++)
         {
-            if (cards[i].rank > highestNum)
+            if (cards[i].rank > highestNum) // If cards rank is highest, reset the highest players and the cards associated with it
             {
                 highestNum = cards[i].rank;
                 highPlayers = [players[i]];
                 winCards = [cards[i]];
-            }
+            } // If a card is equal to the highest so far, then add them with the group
             else if (cards[i].rank == highestNum)
             {
                 highPlayers.Add(players[i]);
@@ -197,19 +183,19 @@ public class Pot
 }
 public class Deal
 {
-    public void DealCards(PlayerHand playerHand, Deck deck) // Deals card in round robin order
+    public void DealCards(PlayerHand playerHand, Deck deck) // Deals cards in round robin order
     {
         int playerChoice = 0;
         List<String> players = playerHand.GetPlayers();
         while (deck.GetLength() > 0)
         {
-            if (playerChoice >= players.Count())
+            if (playerChoice >= players.Count()) // Resets playerchoice to zero once over player count
                 playerChoice = 0;
 
             String player = players[playerChoice];
-
             Card card = deck.Draw();
             Hand hand = playerHand.GetHand(player);
+
             hand.AddCard(card);
             playerHand.UpdateHand(player, hand);
             playerChoice += 1;
@@ -218,7 +204,7 @@ public class Deal
 }
 public class Round
 {
-    private List<String> CheckPlayerCardsUnder(PlayerHand playerHand)
+    private List<string> CheckPlayerCardsUnder(PlayerHand playerHand) // Handles players that don't have a card 
     {
         List<String> players = playerHand.GetPlayers();
 
@@ -236,7 +222,7 @@ public class Round
         }
         return players;
     }
-    private List<String> CheckTiePlayers(List<String> players, List<Hand> hands)
+    private List<string> CheckTiePlayers(List<string> players, List<Hand> hands) // Also checks if players dont have a card but within a tie condition
     {
         for (int i = 0; i < hands.Count(); i++)
         {
@@ -250,7 +236,7 @@ public class Round
         }
         return players;
     }
-    private PlayedCards UpdatePlayedCard(List<String> players, List<Hand> hands)
+    private PlayedCards UpdatePlayedCard(List<string> players, List<Hand> hands) // Updates the played cards by getting a card from each player and displaying it
     {
         PlayedCards playedCards = new PlayedCards();
         for (int i = 0; i < players.Count(); i++)
@@ -278,13 +264,13 @@ public class Round
         }
         return playedCards;
     }
-    private (List<String>, List<Card>) TieChecking((List<String>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
+    private (List<string>, List<Card>) TieChecking((List<string>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
     {
         if (tieChecker.Item1.Count() != 1) // Handle tie, if not, continue
         {
             Console.WriteLine("\nTie!");
 
-            // Handles the pot includes text 
+            // Handles the pot includes text that displays 
             List<String> potRanks = new List<String>();
             foreach (Card card in pot.GetPot())
             {
@@ -309,36 +295,24 @@ public class Round
             {
                 pot.AddCard(card);
             }
-
-            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest();
-            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot);
+            
+            // Rechecks new cards from tie round to see if its another tie
+            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest(); 
+            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot); 
 
             return tieCheckTie;
-
-            /** 
-            for (int i = 0; i < tieChecker.Item1.Count(); i++) // Temp function to return cards back to owners after tie
-            {
-                Hand hand = playerHand.GetHand(tieChecker.Item1[i]);
-                Card card = tieChecker.Item2[i];
-
-                // Added card back to each player and then removes card from pot
-                hand.AddCard(card);
-                playerHand.UpdateHand(tieChecker.Item1[i], hand);
-                pot.RemoveCard(card);
-            }
-            **/
         }
         return tieChecker;
     }
     public bool WinConditionCheck(PlayerHand playerHand, int roundNumber)
     {
         // Win condition for game
-        foreach (Hand hand in playerHand.GetHands())
+        foreach (Hand hand in playerHand.GetHands()) // Checks if player hit 52 cards
         {
             if (hand.GetCardCount() >= 52)
                 return true;
         }
-        if (roundNumber >= 10000)
+        if (roundNumber >= 10000) // Checks if round is at 10000 or more
             return true;
         else
             return false;
@@ -416,12 +390,12 @@ public class Round
         {
             int playerCardCount = playerHand.GetHand(players[i]).GetCardCount();
 
-            if (playerCardCount > highestNum)
+            if (playerCardCount > highestNum) // Sameish process from UpdatePlayedCards highest... Player is set if their card count is the highest
                 pick = players[i];
-            else if (playerCardCount == highestNum)
+            else if (playerCardCount == highestNum) // Defaults to tie but will set it to tie if any values match
                 pick = "";
         }
-        if (pick == "")
+        if (pick == "") // Tie handling
         {
             Console.WriteLine();
             Console.BackgroundColor = ConsoleColor.Yellow;
@@ -429,7 +403,7 @@ public class Round
             Console.Write("The game has ended in a tie!");
             Console.ResetColor();
         }
-        else
+        else // Winner winner chicken dinner. That actaully makes me kinda hungry...
         {
             Console.WriteLine();
             Console.BackgroundColor = ConsoleColor.Yellow;
