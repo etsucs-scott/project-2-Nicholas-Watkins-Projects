@@ -384,12 +384,10 @@ public class Round
         }
         playerHand.UpdateHand(winningPlayer, winHand);
 
-        int cardTotals = 0; // DEBUG
         // Print out player cards and wins
         foreach (String player in playerHand.GetPlayers())
         {
             int cardCount = playerHand.GetHand(player).GetCardCount();
-            cardTotals += cardCount; // DEBUG
 
             Console.Write($"\t\t{player} has {cardCount} cards with ");
             if (player == winningPlayer)
@@ -405,7 +403,6 @@ public class Round
                 Console.Write($"{playerHand.GetPlayerWins(player)} wins!\n");
             }
         }
-        Console.WriteLine($"\tCard totals: {cardTotals}");
     }
     public void DetermineWinner(PlayerHand playerHand)
     {
