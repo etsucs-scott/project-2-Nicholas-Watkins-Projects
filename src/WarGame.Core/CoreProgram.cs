@@ -143,22 +143,17 @@ public class PlayedCards
         // Find the highest ranked players and track them for tie handling
         for (int i = 0; i < playedCards.Count(); i++)
         {
-            if (cards[i].value > highestNum)
+            if (cards[i].rank > highestNum)
             {
                 highestNum = cards[i].rank;
                 highPlayers = [players[i]];
                 winCards = [cards[i]];
             }
-            else if (cards[i].value == highestNum)
+            else if (cards[i].rank == highestNum)
             {
                 highPlayers.Add(players[i]);
                 winCards.Add(cards[i]);
             }
-        }
-        // Remove tied players/winner
-        foreach (String player in highPlayers)
-        {
-            playedCards.Remove(player);
         }
 
         return (highPlayers, winCards);
@@ -174,6 +169,10 @@ public class Pot
     public void SetPot(List<Card> pot)
     {
         this.pot = pot;
+    }
+    public List<Card> GetPot()
+    {
+        return pot;
     }
 }
 public class TiePot
@@ -227,12 +226,13 @@ public class Round
             }
         }
 
-        // Player hand cards to played cards 
+        // Player hands to played cards 
         PlayedCards playedCards = new PlayedCards();
         for (int i = 0; i < players.Count(); i++)
         {
-            Card card = playerHand.GetHand(players[0]).GetCard();
-            playedCards.UpdateCard(players[0], card); // Add played card from each player from hand
+            Card card = playerHand.GetHand(players[i]).GetCard();
+            Console.WriteLine($"{players[i]}: {card.rankPairs[card.rank]} of {card.suite}");
+            playedCards.UpdateCard(players[i], card); // Add played card from each player from hand
         }
 
         // Add cards to pot
@@ -247,16 +247,34 @@ public class Round
         if (tieChecker.Item1.Count() != 1)
         {
             Console.WriteLine("HIT A TIE. Waiting...");
+
+            for (int i = 0; i < tieChecker.Item1.Count(); i++) // Temp function to return cards back to owners after tie
+            {
+                Hand hand = playerHand.GetHand(tieChecker.Item1[i]);
+                hand.AddCard(tieChecker.Item2[i]);
+                playerHand.UpdateHand(tieChecker.Item1[i], hand);
+            }
+            /**
             for (int i = 1; i <= tieChecker.Item1.Count(); i++)
             {
-                pot.AddCard(tieChecker.Item2[i]);
+                pot.AddCard(tieChecker.Item2[i - 1]);
             }
+            **/
             Console.ReadLine();
         }
 
         // Round winner
         String winningPlayer = tieChecker.Item1[0];
+        Hand winHand = playerHand.GetHand(winningPlayer);
+        List<Card> winCards = pot.GetPot();
         Console.WriteLine($"{winningPlayer} has won the round!");
+
+        foreach (Card card in winCards)
+        {
+            winHand.AddCard(card);
+        }
+        playerHand.UpdateHand(winningPlayer, winHand);
+
         foreach (String player in playerHand.GetPlayers())
         {
             Console.WriteLine($"\t\t{player} has {playerHand.GetHand(player).GetCardCount()} cards");
