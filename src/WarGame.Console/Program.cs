@@ -1,4 +1,6 @@
 ﻿
+using System.Drawing;
+
 namespace WarGame.Core
 {
     public class Program
@@ -31,11 +33,21 @@ namespace WarGame.Core
             Round gameRounds = new Round();
 
             bool winCondition = false;
+            int roundNumber = 1;
             while (!winCondition)
             {
                 Pot pot = new Pot();
-                winCondition = gameRounds.RoundLoop(pot, playerHands);
+                Console.WriteLine("\n");
+                Console.BackgroundColor = ConsoleColor.DarkBlue;
+                Console.Write($"##### Round {roundNumber} #####");
+                Console.ResetColor();
+                Console.WriteLine("\n");
+
+                gameRounds.PlayRound(pot, playerHands);
+                winCondition = gameRounds.WinConditionCheck(playerHands, roundNumber);
+                roundNumber += 1;
             }
+            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
         }
     }
 }

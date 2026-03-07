@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.Design;
+using System.Drawing;
 using System.Dynamic;
 using System.Net.Quic;
 using System.Net.Security;
@@ -109,6 +110,10 @@ public class PlayerHand
     {
         return playerhands.Keys.ToList();
     }
+    public List<Hand> GetHands()
+    {
+        return playerhands.Values.ToList();
+    }
     public void RemovePlayer(String player)
     {
         playerhands.Remove(player);
@@ -189,18 +194,6 @@ public class Pot
         return pot;
     }
 }
-public class TiePot
-{
-    private List<Card> tiePot = new List<Card>();
-    public void AddCard(Card card)
-    {
-        tiePot.Add(card);
-    }
-    public void SetPot(List<Card> tiePot)
-    {
-        this.tiePot = tiePot;
-    }
-}
 public class Deal
 {
     public void DealCards(PlayerHand playerHand, Deck deck) // Deals card in round robin order
@@ -224,10 +217,8 @@ public class Deal
 }
 public class Round
 {
-    private int roundNumber = 1;
-    public bool RoundLoop(Pot pot, PlayerHand playerHand)
+    private List<String> CheckPlayerCardsUnder(PlayerHand playerHand)
     {
-        Console.WriteLine($"\nRound {roundNumber}");
         List<String> players = playerHand.GetPlayers();
 
         // Handle players without a card
@@ -239,25 +230,38 @@ public class Round
                 Console.WriteLine($"{player} has lost!");
             }
         }
-
-        // Player hands to played cards 
+        return players;
+    }
+    private PlayedCards UpdatePlayedCard(List<String> players, PlayerHand playerHand)
+    {
         PlayedCards playedCards = new PlayedCards();
         for (int i = 0; i < players.Count(); i++)
         {
             Card card = playerHand.GetHand(players[i]).GetCard();
-            Console.WriteLine($"{players[i]}: {card.rankPairs[card.rank]} of {card.suite}");
+            Console.Write($"{players[i]}: ");
+            
+            if (card.suite == "Hearts" || card.suite == "Diamonds")
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.Write($"{card.rankPairs[card.rank]} of {card.suite}");
+                Console.ResetColor();
+                Console.WriteLine("");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.Write($"{card.rankPairs[card.rank]} of {card.suite}");
+                Console.ResetColor();
+                Console.WriteLine("");
+            }
             playedCards.UpdateCard(players[i], card); // Add played card from each player from hand
         }
-
-        // Add cards to pot
-        foreach (Card card in playedCards.GetCards())
-        {
-            pot.AddCard(card);
-        }
-
-        // Should be moved outside round loop....
-        // Tie handling
-        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
+        return playedCards;
+    }
+    private void TieChecking((List<String>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
+    {
         if (tieChecker.Item1.Count() != 1)
         {
             Console.WriteLine("HIT A TIE. Waiting...");
@@ -273,16 +277,55 @@ public class Round
             }
             Console.ReadLine();
         }
+    }
+    public bool WinConditionCheck(PlayerHand playerHand, int roundNumber)
+    {
+        // Win condition for game
+        foreach (Hand hand in playerHand.GetHands())
+        {
+            if (hand.GetCardCount() >= 52)
+                return true;
+        }
+        if (roundNumber >= 10000)
+            return true;
+        else
+            return false;
+    }
 
+    public void PlayRound(Pot pot, PlayerHand playerHand)
+    {
+
+        // Handle players without cards 
+        List<String> players;
+        players = CheckPlayerCardsUnder(playerHand);
+
+        // Player hands to played cards 
+        PlayedCards playedCards;
+        playedCards = UpdatePlayedCard(players, playerHand);
+
+        // Add cards to pot
+        foreach (Card card in playedCards.GetCards())
+        {
+            pot.AddCard(card);
+        }
+
+        // Tie handling
+        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
+        TieChecking(tieChecker, playerHand, pot); 
 
         // Round winner
-        String winningPlayer = tieChecker.Item1[0];
-        Hand winHand = playerHand.GetHand(winningPlayer);
-        List<Card> winCards = pot.GetPot();
+        String winningPlayer = tieChecker.Item1[0]; // Get winning player
+        Hand winHand = playerHand.GetHand(winningPlayer); // Get winning hand
+        List<Card> winCards = pot.GetPot(); // Get pot from round
 
-        Console.WriteLine($"{winningPlayer} has won the round!");
-        playerHand.AddWin(winningPlayer);
+        Console.WriteLine("");
+        Console.BackgroundColor = ConsoleColor.Yellow;
+        Console.ForegroundColor = ConsoleColor.Black;
+        Console.Write($"{winningPlayer} has won the round!");
+        Console.ResetColor();
+        Console.WriteLine("\n");
 
+        playerHand.AddWin(winningPlayer); // Add a win from the player
 
         // Pot cards -> the back of the winners hand
         foreach (Card card in winCards)
@@ -291,33 +334,23 @@ public class Round
         }
         playerHand.UpdateHand(winningPlayer, winHand);
 
-
-        int totalCards = 0;
         // Print out player cards and wins
         foreach (String player in playerHand.GetPlayers())
         {
             int cardCount = playerHand.GetHand(player).GetCardCount();
-            Console.WriteLine($"\t\t{player} has {cardCount} cards with {playerHand.GetPlayerWins(player)} wins!");
-            totalCards += cardCount; 
-        }
-
-        Console.WriteLine($"\tTotal cards: {totalCards}"); // Debug to see the total card
-        roundNumber += 1;
-
-        // Win condition for game
-        if (playerHand.GetHand(winningPlayer).GetCardCount() >= 52 || playerHand.GetPlayers().Count() <= 1)
-        {
-            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
-            return true;
-        }
-        else if (roundNumber >= 10000)
-        {
-            Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
-            return true;
-        }
-        else
-        {
-            return false;
+            Console.Write($"\t\t{player} has {cardCount} cards with ");
+            if (player == winningPlayer)
+            {
+                Console.BackgroundColor = ConsoleColor.Yellow;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.Write($"{playerHand.GetPlayerWins(player)} wins!");
+                Console.ResetColor(); 
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.Write($"{playerHand.GetPlayerWins(player)} wins!\n");
+            }
         }
     }
 }
