@@ -8,7 +8,7 @@ namespace WarGame.Core
         public static void Main(string[] args)
         {
             int playerAmount = 0;
-            while (true) // INIT Players count by getting from player
+            while (true) // INIT Players count by getting from player/console input
             {
                 Console.Clear();
                 Console.WriteLine("How many players? (2-4): ");
@@ -23,7 +23,8 @@ namespace WarGame.Core
                     Console.ReadLine();
                 }
             }
-            
+
+            // init playerhands, deck, dealing, and then shuffle and deal cards 
             PlayerHand playerHands = new PlayerHand(playerAmount);
             Deck deck = new Deck();
             Deal dealing = new Deal(); // Like FDR frfr
