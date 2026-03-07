@@ -88,11 +88,13 @@ public class Hand
 public class PlayerHand
 {
     private Dictionary<String, Hand> playerhands = new Dictionary<String, Hand>();
+    private Dictionary<String, int> playerWins = new Dictionary<String, int>();
     public PlayerHand(int players)
     {
         for (int i = 0; i < players; i++)
         {
             playerhands[$"Player {i + 1}"] = new Hand();
+            playerWins[$"Player {i + 1}"] = 0;
         }
     }
     public Hand GetHand(String player)
@@ -114,6 +116,14 @@ public class PlayerHand
     public void AddPlayer(String player, Hand hand)
     {
         playerhands[player] = hand;
+    }
+    public void AddWin(String player)
+    {
+        playerWins[player] += 1;
+    }
+    public int GetPlayerWins(String player)
+    {
+        return playerWins[player];
     }
 }
 public class PlayedCards
@@ -166,6 +176,10 @@ public class Pot
     {
         pot.Add(card);
     }
+    public void RemoveCard(Card card)
+    {
+        pot.Remove(card);
+    }
     public void SetPot(List<Card> pot)
     {
         this.pot = pot;
@@ -217,11 +231,11 @@ public class Round
         List<String> players = playerHand.GetPlayers();
 
         // Handle players without a card
-        foreach (String player in players) // Check if player doesnt has card and removes them from PlayerHand if they dont
+        foreach (String player in playerHand.GetPlayers()) // Check if player doesnt has card and removes them from PlayerHand if they dont
         {
             if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
-                playerHand.RemovePlayer(player);
+                players.Remove(player);
                 Console.WriteLine($"{player} has lost!");
             }
         }
@@ -236,7 +250,6 @@ public class Round
         }
 
         // Add cards to pot
-        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
         foreach (Card card in playedCards.GetCards())
         {
             pot.AddCard(card);
@@ -244,43 +257,54 @@ public class Round
 
         // Should be moved outside round loop....
         // Tie handling
+        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
         if (tieChecker.Item1.Count() != 1)
         {
             Console.WriteLine("HIT A TIE. Waiting...");
-
             for (int i = 0; i < tieChecker.Item1.Count(); i++) // Temp function to return cards back to owners after tie
             {
                 Hand hand = playerHand.GetHand(tieChecker.Item1[i]);
-                hand.AddCard(tieChecker.Item2[i]);
+                Card card = tieChecker.Item2[i];
+
+                // Added card back to each player and then removes card from pot
+                hand.AddCard(card);
                 playerHand.UpdateHand(tieChecker.Item1[i], hand);
+                pot.RemoveCard(card);
             }
-            /**
-            for (int i = 1; i <= tieChecker.Item1.Count(); i++)
-            {
-                pot.AddCard(tieChecker.Item2[i - 1]);
-            }
-            **/
             Console.ReadLine();
         }
+
 
         // Round winner
         String winningPlayer = tieChecker.Item1[0];
         Hand winHand = playerHand.GetHand(winningPlayer);
         List<Card> winCards = pot.GetPot();
-        Console.WriteLine($"{winningPlayer} has won the round!");
 
+        Console.WriteLine($"{winningPlayer} has won the round!");
+        playerHand.AddWin(winningPlayer);
+
+
+        // Pot cards -> the back of the winners hand
         foreach (Card card in winCards)
         {
             winHand.AddCard(card);
         }
         playerHand.UpdateHand(winningPlayer, winHand);
 
+
+        int totalCards = 0;
+        // Print out player cards and wins
         foreach (String player in playerHand.GetPlayers())
         {
-            Console.WriteLine($"\t\t{player} has {playerHand.GetHand(player).GetCardCount()} cards");
+            int cardCount = playerHand.GetHand(player).GetCardCount();
+            Console.WriteLine($"\t\t{player} has {cardCount} cards with {playerHand.GetPlayerWins(player)} wins!");
+            totalCards += cardCount; 
         }
+
+        Console.WriteLine($"\tTotal cards: {totalCards}"); // Debug to see the total card
         roundNumber += 1;
 
+        // Win condition for game
         if (playerHand.GetHand(winningPlayer).GetCardCount() >= 52 || playerHand.GetPlayers().Count() <= 1)
         {
             Console.WriteLine("WON GAME YIPPEE CONGRATULATIONS MY PRETTY");
