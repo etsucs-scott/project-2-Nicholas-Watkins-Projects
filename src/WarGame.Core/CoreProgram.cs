@@ -278,19 +278,20 @@ public class Round
         }
         return playedCards;
     }
-    private void TieChecking((List<String>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
+    private (List<String>, List<Card>) TieChecking((List<String>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
     {
         if (tieChecker.Item1.Count() != 1) // Handle tie, if not, continue
         {
             Console.WriteLine("\nTie!");
-            List<String> potRanks = new List<String>();
 
+            // Handles the pot includes text 
+            List<String> potRanks = new List<String>();
             foreach (Card card in pot.GetPot())
             {
                 potRanks.Add(card.rankPairs[card.rank]);
             }
-
             Console.WriteLine(string.Format("Pot includes: {0}", string.Join(", ", potRanks)));
+
             PlayedCards tieCards;
             List<Hand> tieHands = new List<Hand>();
 
@@ -300,7 +301,7 @@ public class Round
             }
 
             // Check for if the players can continue and if there was a tie
-            tieChecker.Item1 = CheckTiePlayers(tieChecker.Item1, tieHands); 
+            tieChecker.Item1 = CheckTiePlayers(tieChecker.Item1, tieHands);
             tieCards = UpdatePlayedCard(tieChecker.Item1, tieHands);
 
             // Add cards to pot
@@ -310,10 +311,10 @@ public class Round
             }
 
             (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest();
-            TieChecking(tieCheckTie, playerHand, pot);
+            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot);
 
-            tieChecker = tieCheckTie;
-            
+            return tieCheckTie;
+
             /** 
             for (int i = 0; i < tieChecker.Item1.Count(); i++) // Temp function to return cards back to owners after tie
             {
@@ -327,6 +328,7 @@ public class Round
             }
             **/
         }
+        return tieChecker;
     }
     public bool WinConditionCheck(PlayerHand playerHand, int roundNumber)
     {
@@ -361,7 +363,7 @@ public class Round
         // Tie handling
         (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
 
-        TieChecking(tieChecker, playerHand, pot);
+        tieChecker = TieChecking(tieChecker, playerHand, pot);
 
         // Round winner
         String winningPlayer = tieChecker.Item1[0]; // Get winning player
@@ -408,19 +410,18 @@ public class Round
     {
         List<String> players = playerHand.GetPlayers();
         int highestNum = 0;
-        int pick = -1;
+        String pick = "";
 
         for (int i = 0; i < playerHand.GetPlayers().Count(); i++)
         {
             int playerCardCount = playerHand.GetHand(players[i]).GetCardCount();
-            if (playerCardCount >= 52)
-                pick = i;
+
             if (playerCardCount > highestNum)
-                highestNum = playerCardCount;
+                pick = players[i];
             else if (playerCardCount == highestNum)
-                pick = -1;
+                pick = "";
         }
-        if (pick == -1)
+        if (pick == "")
         {
             Console.WriteLine();
             Console.BackgroundColor = ConsoleColor.Yellow;
@@ -433,7 +434,7 @@ public class Round
             Console.WriteLine();
             Console.BackgroundColor = ConsoleColor.Yellow;
             Console.ForegroundColor = ConsoleColor.Black;
-            Console.Write($"{players[pick]} has won the game!");
+            Console.Write($"{pick} has won the game!");
             Console.ResetColor();
         }
     }
