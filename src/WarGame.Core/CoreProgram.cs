@@ -382,16 +382,19 @@ public class Round
     }
     public void DetermineWinner(PlayerHand playerHand)
     {
-        List<String> players = playerHand.GetPlayers();
+        List<string> players = playerHand.GetPlayers();
         int highestNum = 0;
-        String pick = "";
+        string pick = "";
 
-        for (int i = 0; i < playerHand.GetPlayers().Count(); i++)
+        foreach (string player in players)
         {
-            int playerCardCount = playerHand.GetHand(players[i]).GetCardCount();
+            int playerCardCount = playerHand.GetHand(player).GetCardCount();
 
             if (playerCardCount > highestNum) // Sameish process from UpdatePlayedCards highest... Player is set if their card count is the highest
-                pick = players[i];
+            {
+                pick = player;
+                highestNum = playerCardCount;
+            }
             else if (playerCardCount == highestNum) // Defaults to tie but will set it to tie if any values match
                 pick = "";
         }
