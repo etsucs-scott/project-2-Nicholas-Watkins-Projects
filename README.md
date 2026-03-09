@@ -21,3 +21,8 @@ dotnet run --project src/WarGame.Console
 ### Player Count
 Player count is chosen after you run the game. There will be a prompt for entering how many players you want. Enter only the number or the program will prompt you to try again.
 
+Example:
+```
+How many players? (2-4):
+4
+```
