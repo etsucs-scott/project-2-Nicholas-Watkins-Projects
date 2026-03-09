@@ -47,6 +47,7 @@ namespace WarGame.Core
                 gameRounds.PlayRound(pot, playerHands);
                 winCondition = gameRounds.WinConditionCheck(playerHands, roundNumber);
 
+                // Comment or delete to remove player prompt for game
                 Console.WriteLine("Press enter to continue");
                 Console.ReadLine();
 
