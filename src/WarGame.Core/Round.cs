@@ -7,201 +7,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace WarGame.Core;
 
-public class Card
-{
-    public string suite { get; private set; }
-    public int rank { get; private set; }
-    public Dictionary<int, string> rankPairs { get; private set; } = new Dictionary<int, string>();
-    public Card(int suitePick, int rankNum)
-    {
-        string[] suites = { "Clubs", "Diamonds", "Spades", "Hearts" }; // 0, 1, 2, 3
-        // Converts rankNum to store its string counterpart, including J-A
-        if (rankNum >= 11)
-        {
-            string[] uniqueRank = { "J", "Q", "K", "A" };
-            rankPairs[rankNum] = uniqueRank[rankNum - 11];
-        }
-        else
-            rankPairs[rankNum] = $"{rankNum}";
-
-        suite = suites[suitePick];
-        rank = rankNum;
-    }
-}
-public class Deck
-{
-    private Stack<Card> cards = new Stack<Card>();
-    public Deck()
-    {
-        // 52 card deck init
-        for (int i = 0; i < 4; i++)
-        {
-            for (int j = 0; j < 13; j++)
-            {
-                cards.Push(new Card(i, j + 2));
-            }
-        }
-    }
-    public Card Draw()
-    {
-        return cards.Pop();
-    }
-    public void Shuffle() // Shuffle cards by randomly mixing a list then converting back to a stack
-    {
-        List<Card> list = cards.ToList();
-        list = list.OrderBy(x => Random.Shared.Next()).ToList();
-        cards = new Stack<Card>(list);
-    }
-    public int GetLength()
-    {
-        return cards.Count;
-    }
-}
-public class Hand
-{
-    private Queue<Card> hand = new Queue<Card>();
-    public Card GetCard()
-    {
-        return hand.Dequeue();
-    }
-    public void AddCard(Card card)
-    {
-        hand.Enqueue(card);
-    }
-    public int GetCardCount()
-    {
-        return hand.Count;
-    }
-}
-public class PlayerHand
-{
-    private Dictionary<string, Hand> playerhands = new Dictionary<string, Hand>();
-    private Dictionary<string, int> playerWins = new Dictionary<string, int>();
-    public PlayerHand(int players) // init players
-    {
-        for (int i = 0; i < players; i++)
-        {
-            playerhands[$"Player {i + 1}"] = new Hand();
-            playerWins[$"Player {i + 1}"] = 0;
-        }
-    }
-    public Hand GetHand(string player)
-    {
-        return playerhands[player];
-    }
-    public void UpdateHand(string player, Hand hand)
-    {
-        playerhands[player] = hand;
-    }
-    public List<string> GetPlayers()
-    {
-        return playerhands.Keys.ToList();
-    }
-    public List<Hand> GetHands()
-    {
-        return playerhands.Values.ToList();
-    }
-    public void RemovePlayer(string player)
-    {
-        playerhands.Remove(player);
-    }
-    public void AddPlayer(string player, Hand hand)
-    {
-        playerhands[player] = hand;
-    }
-    public void AddWin(string player)
-    {
-        playerWins[player] += 1;
-    }
-    public int GetPlayerWins(string player)
-    {
-        return playerWins[player];
-    }
-}
-public class PlayedCards
-{
-    private Dictionary<string, Card> playedCards = new Dictionary<string, Card>();
-    public Card GetCard(string player)
-    {
-        return playedCards[player];
-    }
-    public List<Card> GetCards()
-    {
-        return playedCards.Values.ToList();
-    }
-    public void UpdateCard(string player, Card card)
-    {
-        playedCards[player] = card;
-    }
-    public (List<string>, List<Card>) GetHighest()
-    {
-        int highestNum = 0;
-        List<Card> winCards = new List<Card>();
-        List<String> highPlayers = new List<String>();
-
-        List<String> players = playedCards.Keys.ToList();
-        List<Card> cards = playedCards.Values.ToList();
-
-        // Find the highest ranked players and track them for tie handling
-        for (int i = 0; i < playedCards.Count(); i++)
-        {
-            if (cards[i].rank > highestNum) // If cards rank is highest, reset the highest players and the cards associated with it
-            {
-                highestNum = cards[i].rank;
-                highPlayers = [players[i]];
-                winCards = [cards[i]];
-            } // If a card is equal to the highest so far, then add them with the group
-            else if (cards[i].rank == highestNum)
-            {
-                highPlayers.Add(players[i]);
-                winCards.Add(cards[i]);
-            }
-        }
-
-        return (highPlayers, winCards);
-    }
-}
-public class Pot
-{
-    private List<Card> pot = new List<Card>();
-    public void AddCard(Card card)
-    {
-        pot.Add(card);
-    }
-    public void RemoveCard(Card card)
-    {
-        pot.Remove(card);
-    }
-    public void SetPot(List<Card> pot)
-    {
-        this.pot = pot;
-    }
-    public List<Card> GetPot()
-    {
-        return pot;
-    }
-}
-public class Deal
-{
-    public void DealCards(PlayerHand playerHand, Deck deck) // Deals cards in round robin order
-    {
-        int playerChoice = 0;
-        List<String> players = playerHand.GetPlayers();
-        while (deck.GetLength() > 0)
-        {
-            if (playerChoice >= players.Count()) // Resets playerchoice to zero once over player count
-                playerChoice = 0;
-
-            String player = players[playerChoice];
-            Card card = deck.Draw();
-            Hand hand = playerHand.GetHand(player);
-
-            hand.AddCard(card);
-            playerHand.UpdateHand(player, hand);
-            playerChoice += 1;
-        }
-    }
-}
+/// <summary>
+/// Holds the logic of the round of the game
+/// </summary>
 public class Round
 {
     private List<string> CheckPlayerCardsUnder(PlayerHand playerHand) // Handles players that don't have a card 
@@ -243,7 +51,7 @@ public class Round
         {
             Card card = hands[i].GetCard();
             Console.Write($"{players[i]}: ");
-            
+
             if (card.suite == "Hearts" || card.suite == "Diamonds")
             {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -295,10 +103,10 @@ public class Round
             {
                 pot.AddCard(card);
             }
-            
+
             // Rechecks new cards from tie round to see if its another tie
-            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest(); 
-            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot); 
+            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest();
+            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot);
 
             return tieCheckTie;
         }
