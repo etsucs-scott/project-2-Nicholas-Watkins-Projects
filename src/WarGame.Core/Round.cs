@@ -12,71 +12,59 @@ namespace WarGame.Core;
 /// </summary>
 public class Round
 {
-    private List<string> CheckPlayerCardsUnder(PlayerHand playerHand) // Handles players that don't have a card 
+    public PlayerList CheckPlayerCardsUnder(PlayerHand playerHand) // Handles players that don't have a card 
     {
-        List<String> players = playerHand.GetPlayers();
+        List<string> players = playerHand.GetPlayers();
+        PlayerList pList = new PlayerList(players);
 
         // Handle players without a card
-        foreach (String player in playerHand.GetPlayers()) // Check if player doesnt has card and removes them from PlayerHand if they dont
+        foreach (string player in playerHand.GetPlayers()) // Check if player doesnt has card and removes them from PlayerHand if they dont
         {
             if (playerHand.GetHand(player).GetCardCount() <= 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{player} has lost!");
+                pList.consoleOutput = $"{player} has lost!\n";
                 players.Remove(player);
                 playerHand.RemovePlayer(player);
-                Console.ResetColor();
             }
         }
-        return players;
+        return pList;
     }
-    private List<string> CheckTiePlayers(List<string> players, List<Hand> hands) // Also checks if players dont have a card but within a tie condition
+    public PlayerList CheckTiePlayers(List<string> players, List<Hand> hands) // Also checks if players dont have a card but within a tie condition
     {
+        PlayerList pList = new PlayerList(players);
+
         for (int i = 0; i < hands.Count(); i++)
         {
             if (hands[i].GetCardCount() <= 0)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{players[i]} has lost!");
+                pList.consoleOutput = $"{players[i]} has lost!\n";
                 players.Remove(players[i]);
-                Console.ResetColor();
             }
         }
-        return players;
+        return pList;
     }
-    private PlayedCards UpdatePlayedCard(List<string> players, List<Hand> hands) // Updates the played cards by getting a card from each player and displaying it
+    public PlayedCardList UpdatePlayedCard(List<string> players, List<Hand> hands) // Updates the played cards by getting a card from each player and displaying it
     {
         PlayedCards playedCards = new PlayedCards();
+        PlayedCardList pList = new PlayedCardList();
+
         for (int i = 0; i < players.Count(); i++)
         {
             Card card = hands[i].GetCard();
-            Console.Write($"{players[i]}: ");
-
-            if (card.suite == "Hearts" || card.suite == "Diamonds")
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.BackgroundColor = ConsoleColor.White;
-                Console.Write($"{card.rankPairs[card.rank]} of {card.suite}");
-                Console.ResetColor();
-                Console.WriteLine("");
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Black;
-                Console.BackgroundColor = ConsoleColor.White;
-                Console.Write($"{card.rankPairs[card.rank]} of {card.suite}");
-                Console.ResetColor();
-                Console.WriteLine("");
-            }
+            pList.consoleOutput += $"{players[i]}: {card.rankPairs[card.rank]} of {card.suite}\n";
             playedCards.UpdateCard(players[i], card); // Add played card from each player from hand
         }
-        return playedCards;
+        pList.pCards = playedCards;
+        pList.isOut = true;
+
+        return pList;
     }
-    private (List<string>, List<Card>) TieChecking((List<string>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot)
+    public PlayerCardList TieChecking((List<string>, List<Card>) tieChecker, PlayerHand playerHand, Pot pot, PlayerCardList playerCardList)
     {
+        playerCardList.isOut = true;
         if (tieChecker.Item1.Count() != 1) // Handle tie, if not, continue
         {
-            Console.WriteLine("\nTie!");
+            playerCardList.consoleOutput += "\nTie!\n";
 
             // Handles the pot includes text that displays 
             List<String> potRanks = new List<String>();
@@ -84,7 +72,7 @@ public class Round
             {
                 potRanks.Add(card.rankPairs[card.rank]);
             }
-            Console.WriteLine(string.Format("Pot includes: {0}", string.Join(", ", potRanks)));
+            playerCardList.consoleOutput += string.Format("Pot includes: {0}\n", string.Join(", ", potRanks));
 
             PlayedCards tieCards;
             List<Hand> tieHands = new List<Hand>();
@@ -95,8 +83,13 @@ public class Round
             }
 
             // Check for if the players can continue and if there was a tie
-            tieChecker.Item1 = CheckTiePlayers(tieChecker.Item1, tieHands);
-            tieCards = UpdatePlayedCard(tieChecker.Item1, tieHands);
+            PlayerList pList = CheckTiePlayers(tieChecker.Item1, tieHands);
+            playerCardList.consoleOutput += pList.consoleOutput;
+            tieChecker.Item1 = pList.players;
+
+            PlayedCardList pCardList = UpdatePlayedCard(tieChecker.Item1, tieHands);
+            playerCardList.consoleOutput += pCardList.consoleOutput;
+            tieCards = pCardList.pCards;
 
             // Add cards to pot
             foreach (Card card in tieCards.GetCards())
@@ -105,12 +98,12 @@ public class Round
             }
 
             // Rechecks new cards from tie round to see if its another tie
-            (List<String>, List<Card>) tieCheckTie = tieCards.GetHighest();
-            tieCheckTie = TieChecking(tieCheckTie, playerHand, pot);
+            playerCardList.playerCards = tieCards.GetHighest(); 
+            playerCardList = TieChecking(playerCardList.playerCards, playerHand, pot, playerCardList);
 
-            return tieCheckTie;
+            return playerCardList;
         }
-        return tieChecker;
+        return playerCardList;
     }
     public bool WinConditionCheck(PlayerHand playerHand, int roundNumber)
     {
@@ -125,72 +118,10 @@ public class Round
         else
             return false;
     }
-    public void PlayRound(Pot pot, PlayerHand playerHand)
-    {
-
-        // Handle players without cards 
-        List<String> players;
-        players = CheckPlayerCardsUnder(playerHand);
-
-        // Player hands to played cards 
-        PlayedCards playedCards;
-        playedCards = UpdatePlayedCard(players, playerHand.GetHands());
-
-        // Add cards to pot
-        foreach (Card card in playedCards.GetCards())
-        {
-            pot.AddCard(card);
-        }
-
-        // Tie handling
-        (List<String>, List<Card>) tieChecker = playedCards.GetHighest();
-
-        tieChecker = TieChecking(tieChecker, playerHand, pot);
-
-        // Round winner
-        String winningPlayer = tieChecker.Item1[0]; // Get winning player
-        Hand winHand = playerHand.GetHand(winningPlayer); // Get winning hand
-        List<Card> winCards = pot.GetPot(); // Get pot from round
-
-        Console.WriteLine("");
-        Console.BackgroundColor = ConsoleColor.Yellow;
-        Console.ForegroundColor = ConsoleColor.Black;
-        Console.Write($"{winningPlayer} has won the round!");
-        Console.ResetColor();
-        Console.WriteLine("\n");
-
-        playerHand.AddWin(winningPlayer); // Add a win from the player
-
-        // Pot cards -> the back of the winners hand
-        foreach (Card card in winCards)
-        {
-            winHand.AddCard(card);
-        }
-        playerHand.UpdateHand(winningPlayer, winHand);
-
-        // Print out player cards and wins
-        foreach (String player in playerHand.GetPlayers())
-        {
-            int cardCount = playerHand.GetHand(player).GetCardCount();
-
-            Console.Write($"\t\t{player} has {cardCount} cards with ");
-            if (player == winningPlayer)
-            {
-                Console.BackgroundColor = ConsoleColor.Yellow;
-                Console.ForegroundColor = ConsoleColor.Black;
-                Console.Write($"{playerHand.GetPlayerWins(player)} wins!");
-                Console.ResetColor();
-                Console.WriteLine();
-            }
-            else
-            {
-                Console.Write($"{playerHand.GetPlayerWins(player)} wins!\n");
-            }
-        }
-    }
-    public void DetermineWinner(PlayerHand playerHand)
+    public VoidList DetermineWinner(PlayerHand playerHand)
     {
         List<string> players = playerHand.GetPlayers();
+        VoidList vList = new VoidList();
         int highestNum = 0;
         string pick = "";
 
@@ -208,19 +139,13 @@ public class Round
         }
         if (pick == "") // Tie handling
         {
-            Console.WriteLine();
-            Console.BackgroundColor = ConsoleColor.Yellow;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.Write("The game has ended in a tie!");
-            Console.ResetColor();
+            vList.consoleOutput += "The game has ended in a tie!";
         }
         else // Winner winner chicken dinner. That actaully makes me kinda hungry...
         {
-            Console.WriteLine();
-            Console.BackgroundColor = ConsoleColor.Yellow;
-            Console.ForegroundColor = ConsoleColor.Black;
-            Console.Write($"{pick} has won the game!");
-            Console.ResetColor();
+            vList.consoleOutput += $"{pick} has won the game!";
         }
+        vList.isOut = true;
+        return vList;
     }
 }
